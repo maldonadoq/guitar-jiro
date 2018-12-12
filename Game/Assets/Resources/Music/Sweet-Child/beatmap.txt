@@ -34,9 +34,9 @@
         "Name": "Album"
     },
     "Background": {
-        "Enable": false,
-        "Type": 0,
-        "Name": ""
+        "Enable": true,
+        "Type": 1,
+        "Name": "vsweet-c"
     },
     "SoundEffect": {
     	"Enable": true,

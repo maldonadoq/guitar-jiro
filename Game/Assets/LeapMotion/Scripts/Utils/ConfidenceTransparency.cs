@@ -8,11 +8,19 @@ using UnityEngine;
 using System.Collections;
 using Leap;
 
-/** 
- * Updates the hand's opacity based it's confidence rating. 
- * Attach to a HandModel object assigned to the HandController in a scene.
- */
+// A Leap Motion hand script that set's the alpha
+// of the hand based on the hand's self confidence value.
 public class ConfidenceTransparency : MonoBehaviour {
+
+  private Material material;
+
+  void Start() {
+    material = new Material(Shader.Find("Transparent/Diffuse"));
+    Renderer[] renderers = GetComponentsInChildren<Renderer>();
+    
+    for (int i = 0; i < renderers.Length; ++i)
+      renderers[i].material = material;
+  }
 
   void Update() {
     Hand leap_hand = GetComponent<HandModel>().GetLeapHand();

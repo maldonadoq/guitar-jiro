@@ -1,15 +1,13 @@
 ﻿using UnityEngine.SceneManagement;
 using System.Collections.Generic;
-using System.Collections;
 using UnityEngine;
 using SimpleJSON;
-using System.IO;
 using Leap;
 
 public class Select : MonoBehaviour {
-	protected Controller leap;
+    protected Controller leap;
 
-	public GameObject menuitemobj;
+    public GameObject menuitemobj;
 	public List<GameObject> menulist = new List<GameObject> ();
 	protected string playingsong ;
 
@@ -49,9 +47,9 @@ public class Select : MonoBehaviour {
 		this.songstart = new Dictionary<string, float> ();
 		this.backward = new Dictionary<string, float> ();
 
-		leap = new Controller ();		// leap motion controller
+        leap = new Controller();        // leap motion controller
 
-		diffcollection = new List<string> (){"Easy","Normal","Hard"};
+        diffcollection = new List<string> (){"Easy","Normal","Hard"};
 		diffcolormap = new Dictionary<string, Color> {
 			{"Hard",new Color(249.0f/255,90.0f/255,101.0f/255,1.0f)},
 			{"Easy",new Color(191.0f/255,255.0f/255,160.0f/255,1.0f)},
@@ -60,7 +58,7 @@ public class Select : MonoBehaviour {
 
 		// read from resource music
 		string[] files = (Resources.Load ("Music/MusicList") as TextAsset).text.Replace ("\r\n", "\n").Replace ("\r", "\n").Split ("\n" [0]);
-		Debug.Log (files.Length.ToString () + " music in list");
+		print (files.Length.ToString () + " music in list");
 
 
 		foreach (var item in files) {
@@ -131,18 +129,20 @@ public class Select : MonoBehaviour {
 				}
 			}
 		}
+        
+        //open the guesture
+        leap.EnableGesture(Gesture.GestureType.TYPESWIPE);
+        leap.Config.SetFloat("Gesture.Swipe.MinVelocity", 750f);
 
-		//open the guesture
-		leap.EnableGesture (Leap.Gesture.GestureType.TYPESWIPE);
-		//leap.Config.SetFloat("Gesture.Swipe.MinLength", 100.0f);
-		leap.Config.SetFloat ("Gesture.Swipe.MinVelocity", 750f);
-		leap.Config.Save ();
-	}
+        leap.EnableGesture(Gesture.GestureType.TYPE_CIRCLE);
+        leap.Config.SetFloat("Gesture.CircleTap.MinVelocity", 750f);
 
-	// Update is called once per frame
-	void Update () {
-		//the cover	
-		if (covermotion) {
+        leap.Config.Save();
+    }
+
+	void Update () {        
+
+        if (covermotion) {
 			Color tcolor = CoverTexture.color;
 			float a = tcolor.a + Time.deltaTime * 2 * alphadirection;
 			if (a < 0.0f) {
@@ -158,10 +158,8 @@ public class Select : MonoBehaviour {
 
 
 			if(QuitGameFlag && a>0.8f ){
-
 				QuitGameFlag = false;
-				Debug.Log("system exit!");
-				Application.Quit();
+                SceneManager.LoadScene ("Menu");
 			}
 		}
 
@@ -201,7 +199,7 @@ public class Select : MonoBehaviour {
 					double lx = position.x;
 					position.x += 0.5f * lastmotion * Time.deltaTime;
 					item.transform.position = position;
-					// if any item cross the 0.5f , release the lock;
+
 					if ((position.x - 0.5) * (lx - 0.5) < 0) {
 						if (playingsong != item.GetComponent<GUIText> ().text) {
 							// play this item music
@@ -221,11 +219,13 @@ public class Select : MonoBehaviour {
 							music.Play ();
 							playingsong = item.GetComponent<GUIText> ().text;
 						}
-						// unlock 
+
 						this.motionlock = false;
 					}
 				}
-				GetComponent<AudioSource> ().volume -= Time.deltaTime * 1.2f;
+
+                GetComponent<AudioSource>().volume = 0.5f;
+
 			} else if (lastmotion == 0){
 				foreach (var item in menulist) {
 					Vector3 position = item.transform.position;
@@ -243,21 +243,16 @@ public class Select : MonoBehaviour {
 						PlayerPrefs.SetInt ("enableBG", 1);
 						PlayerPrefs.SetFloat ("BACKWARD", this.backward [item.GetComponent<GUIText> ().text]);
 						PlayerPrefs.SetInt ("Difficulty", this.diff [item.transform.GetChild (0).GetComponent<GUIText> ().text]);
-						SceneManager.LoadScene ("Game");
+						SceneManager.LoadScene ("Network");
 					}
-
 				}
 			}
 
 		} else {
-			// fix the low sound
-			if (GetComponent<AudioSource> ().volume < 1.0) {
-				GetComponent<AudioSource> ().volume += Time.deltaTime * 0.5f;
-			}
+
 			// keyboard
 			if (!QuitGameFlag && Input.GetKey(KeyCode.Escape)){
 				Debug.Log("get key escape");
-				//Application.Quit();
 				alphadirection = 1f;
 				covermotion = true;
 				QuitGameFlag = true;
@@ -276,7 +271,7 @@ public class Select : MonoBehaviour {
 					motionlock = true;
 				}
 			}
-			if (Input.GetKey (KeyCode.S)||Input.GetKey (KeyCode.DownArrow)|| Input.GetKey (KeyCode.Space)) {
+			if (Input.GetKey (KeyCode.DownArrow)|| Input.GetKey (KeyCode.Space)) {
 				changedifftimeendtime = 0.8f;
 				motionlock = true;
 				foreach (var item in menulist) {
@@ -289,58 +284,85 @@ public class Select : MonoBehaviour {
 						index = (index + 1) % list.Count;
 						difftonext = list [index];
 						difftextobj = item.transform.GetChild (0).GetComponent<GUIText> ();
-						//item.transform.GetChild(0).GetComponent<GUIText>().text = list[index];
-						//item.transform.GetChild(0).GetComponent<GUIText>().color = diffcolormap[list[index]];
 					}
 				}
 				lastmotion = 2;
 			}
-			if(Input.GetKey (KeyCode.W)||Input.GetKey (KeyCode.UpArrow)||Input.GetKey (KeyCode.Return)){
+			if(Input.GetKey (KeyCode.UpArrow)||Input.GetKey (KeyCode.Return)){
 				covermotion = true;
 				lastmotion = 0;
 				motionlock = true;
 			}
-			//
-			Frame sfream = leap.Frame ();
-			foreach (var gesture in sfream.Gestures()) {
-				if (gesture.Type == Leap.Gesture.GestureType.TYPESWIPE) {
-					SwipeGesture swipeGesture = new SwipeGesture (gesture);
-					Debug.Log (" gesture read success : " + swipeGesture.Direction.ToString ());
-					Vector gestureVector = swipeGesture.Direction;
-					float x = gestureVector.x;
-					float y = gestureVector.y;
-					if (x < - 0.7f && (menulist [0].transform.position.x + (menulist.Count - 1) * 0.5) > 0.6f) {
-						lastmotion = -1;
-					} else if (x > 0.7f && menulist [0].transform.position.x < 0.4f) {
-						lastmotion = 1;
-					} else if (y < -0.7f) { 
-						// change difficult
-						changedifftimeendtime = 0.0f;
-						motionlock = true;
-						foreach (var item in menulist) {
-							Vector3 position = item.transform.position;
-							if (position.x > 0.4 && position.x < 0.6) {
-								var list = difflist [item.GetComponent<GUIText> ().text];
-								int index = list.IndexOf (item.transform.GetChild (0).GetComponent<GUIText> ().text);
-								Debug.Log ("diff content list " + list.ToString () + " index: " + index);
 
-								index = (index + 1) % list.Count;
-								difftonext = list [index];
-								difftextobj = item.transform.GetChild (0).GetComponent<GUIText> ();
-							}
-						}
-						lastmotion = 2;
+            if (Input.GetKey(KeyCode.KeypadPlus) || Input.GetKey(KeyCode.Plus) || Input.GetKey(KeyCode.Alpha1)) {
+                GetComponent<AudioSource>().volume += 0.01f;
+            }
+            if (Input.GetKey(KeyCode.KeypadMinus) || Input.GetKey(KeyCode.Minus) || Input.GetKey(KeyCode.Alpha2)) {
+                GetComponent<AudioSource>().volume -= 0.01f;
+            }
 
-					} else if (y > 0.6) {
-						Debug.Log ("select music guesture");
-						lastmotion = 0;
-						covermotion = true;
-					} else {
-						return;
-					}
-					motionlock = true;
-				}
-			}
-		}
+            Frame gestures = leap.Frame();
+            foreach (var gesture in gestures.Gestures()) {
+                if (gesture.Type == Gesture.GestureType.TYPESWIPE) {
+
+                    SwipeGesture swipeGesture = new SwipeGesture(gesture);
+                    Vector gestureVector = swipeGesture.Direction;
+                    float x = gestureVector.x;
+                    float y = gestureVector.y;
+                    if (x < -0.7f && (menulist[0].transform.position.x + (menulist.Count - 1) * 0.5) > 0.6f) {
+                        lastmotion = -1;
+                    }
+                    else if (x > 0.7f && menulist[0].transform.position.x < 0.4f) {
+                        lastmotion = 1;
+                    }
+                    else if (y < -0.7f) {
+                        // change difficult
+                        changedifftimeendtime = 0.0f;
+                        motionlock = true;
+                        foreach (var item in menulist) {
+                            Vector3 position = item.transform.position;
+                            if (position.x > 0.4 && position.x < 0.6) {
+                                var list = difflist[item.GetComponent<GUIText>().text];
+                                int index = list.IndexOf(item.transform.GetChild(0).GetComponent<GUIText>().text);
+                                Debug.Log("diff content list " + list.ToString() + " index: " + index);
+
+                                index = (index + 1) % list.Count;
+                                difftonext = list[index];
+                                difftextobj = item.transform.GetChild(0).GetComponent<GUIText>();
+                            }
+                        }
+                        lastmotion = 2;
+
+                    }
+                    else if (y > 0.6) {
+                        print("select music guesture");
+                        lastmotion = 0;
+                        covermotion = true;
+                    }
+                    else {
+                        return;
+                    }
+                    motionlock = true;
+                }
+                else if (gesture.Type == Gesture.GestureType.TYPE_CIRCLE) {
+                    CircleGesture circle = new CircleGesture(gesture);
+
+                    string clockwiseness;
+                    var music = GetComponent<AudioSource>();
+                    if (circle.Pointable.Direction.AngleTo(circle.Normal) <= Mathf.PI / 2) {
+                        if (music.volume < 1)
+                            music.volume += 0.1f;
+                        clockwiseness = "clockwise";
+                    }
+                    else {
+                        if (music.volume > 0)
+                            music.volume -= 0.1f;
+                        clockwiseness = "counterclockwise";
+                    }
+
+                    print(clockwiseness);
+                }
+            }
+        }
 	}
 }
