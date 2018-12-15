@@ -14,5 +14,3 @@ Guitar Jiro es un proyecto donde tenemos interacción con barras, que se van apr
 - Seleccionar escena Menu
 - Comenzar a Jugar
 ```
-
-[![Alt text](https://img.youtube.com/vi/z4v2Gslfyec/0.jpg)](https://www.youtube.com/watch?v=z4v2Gslfyec)
